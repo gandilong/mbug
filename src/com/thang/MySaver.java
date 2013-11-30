@@ -17,7 +17,7 @@ public class MySaver implements Runnable {
 	private String cName=null;
 	public static String action="https://crm.alibaba-inc.com";
 	private static final String biao="https://crm.alibaba-inc.com/noah/platform/customer/createCustomer.xul?&from=caenir";
-	private List<NameValuePair> inputs=new ArrayList<NameValuePair>(4);
+	private List<NameValuePair> inputs=new ArrayList<NameValuePair>(5);
 	public MySaver(String s){
 		this.cName=s;
 	}

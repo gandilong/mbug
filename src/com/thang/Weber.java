@@ -49,7 +49,7 @@ public class Weber {
 	public static String LoginURL="https://login.alibaba-inc.com/ssoLogin.htm?APP_NAME=transformers&BACK_URL=https%3A%2F%2Fcrmchn.cn.alibaba-inc.com%2Fuser%2Fturbine%2Ftemplate%2Fuser%2CSignin&CONTEXT_PATH=%2Fuser%2Fturbine&CLIENT_VERSION=0.3.6-forcrm";
 	
 	public static DefaultHttpClient httpclient=null;
-	public static ExecutorService pools=Executors.newFixedThreadPool(90);
+	public static ExecutorService pools=Executors.newFixedThreadPool(60);
 	
 	public static HashSet<String> saveCompany=new HashSet<String>();
 	
@@ -264,7 +264,7 @@ public class Weber {
 		System.out.println("¿ªÊ¼É¨Ãè...");
 		new Thread(new Scaner(1)).start();
 		new Thread(new Scaner(2)).start();
-		//new Thread(new Scaner(3)).start();
+		new Thread(new Scaner(3)).start();
 		
 	}
 	
