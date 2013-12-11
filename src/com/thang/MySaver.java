@@ -10,6 +10,8 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
 public class MySaver implements Runnable {
@@ -22,17 +24,20 @@ public class MySaver implements Runnable {
 	}
 	
 	public static void saveCrm(String name){
+		
+		HttpPost hpost_form=null;
 		try{
+			HttpContext context=new BasicHttpContext(); ;
     	    HttpGet biao_get=new HttpGet(biao);
-			HttpResponse biao_resp=Weber.httpclient.execute(biao_get);
+			HttpResponse biao_resp=Weber.httpclient.execute(biao_get,context);
 			
 			String biaoPage=EntityUtils.toString(biao_resp.getEntity(),Consts.UTF_8);
 			EntityUtils.consume(biao_resp.getEntity());
 			
-			
+			 
 			    List<NameValuePair> input=new ArrayList<NameValuePair>(5);
 				action+=biaoPage.substring(biaoPage.indexOf("createCustomerAction=shy.mixin")+46, biaoPage.indexOf("'),{createCustomer", biaoPage.indexOf("createCustomerAction=shy.mixin")));
-				HttpPost hpost_form=new HttpPost(action);
+				hpost_form=new HttpPost(action);
 					String params="[{\"$rid\":\"\",\"phoneCountryCode\":\"86\",\"faxCountryCode\":\"86\",\"mobileCountryCode\":\"86\",\"depotLeadsSource2\":\"97080\",\"type\":\"enterprise\",\"country\":\"CN\",\"productLine\":\"1\",\"companyName\":\""+name+"\",\"corporateRepresent\":\""+Weber.person+"\",\"phoneAreaCode\":\"021\",\"phoneNumber\":\""+Weber.phone+"\",\"mobilePhoneNumber\":null,\"faxAreaCode\":null,\"faxPhoneNumber\":null,\"email\":null,\"select_countryField_zFkat\":\"CN\",\"distType\":\"owner\",\"distTarget\":\""+Weber.uname+"\"}]";	
 				
 					input.add(new BasicNameValuePair("_args_",params));
@@ -40,7 +45,7 @@ public class MySaver implements Runnable {
 					input.add(new BasicNameValuePair("t__",String.valueOf(Math.random())));
 						hpost_form.setEntity(new UrlEncodedFormEntity(input,"UTF-8"));
 						
-						HttpResponse resp_form=Weber.httpclient.execute(hpost_form);
+						HttpResponse resp_form=Weber.httpclient.execute(hpost_form,context);
 						if(200==resp_form.getStatusLine().getStatusCode()){
 							String saveResult=EntityUtils.toString(resp_form.getEntity());
 							EntityUtils.consume(resp_form.getEntity());//不断开连接
@@ -64,6 +69,7 @@ public class MySaver implements Runnable {
 						}
 	     }catch(Exception e){
 	    	 e.printStackTrace();
+	    	 hpost_form.abort();
 	     }
 	}
 	
