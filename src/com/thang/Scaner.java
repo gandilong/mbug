@@ -76,13 +76,13 @@ public class Scaner implements Runnable{
 				}
 				
 				if(Weber.saveCompany.contains(result)){
-					System.out.println(result+" ==> 数据己处理！");
 				    continue;
 				}else{
 					//toSaveCompany.add(result);
-					//Weber.saveCompany.add(result);
+					Weber.saveCompany.add(result);
 					//System.out.println(result);
 					Weber.pools.execute(new MySaver(result));
+					//MySaver.saveCrm(result);
 				}
 				
 			}

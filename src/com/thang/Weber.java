@@ -1,7 +1,11 @@
 package com.thang;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -9,26 +13,39 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.net.ssl.SSLException;
+
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ProtocolException;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.RedirectStrategy;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.params.ClientPNames;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.cookie.CookieOrigin;
+import org.apache.http.cookie.CookieSpec;
+import org.apache.http.cookie.CookieSpecFactory;
+import org.apache.http.cookie.MalformedCookieException;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.impl.cookie.BrowserCompatSpec;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.dom4j.DocumentHelper;
@@ -49,7 +66,7 @@ public class Weber {
 	public static String LoginURL="https://login.alibaba-inc.com/ssoLogin.htm?APP_NAME=transformers&BACK_URL=https%3A%2F%2Fcrmchn.cn.alibaba-inc.com%2Fuser%2Fturbine%2Ftemplate%2Fuser%2CSignin&CONTEXT_PATH=%2Fuser%2Fturbine&CLIENT_VERSION=0.3.6-forcrm";
 	
 	public static DefaultHttpClient httpclient=null;
-	public static ExecutorService pools=Executors.newFixedThreadPool(60);
+	public static ExecutorService pools=Executors.newFixedThreadPool(45);
 	
 	public static HashSet<String> saveCompany=new HashSet<String>();
 	
@@ -64,17 +81,18 @@ public class Weber {
 	 */
 	public void init(){
 		try{
-			char[] c=new char[1024];
 			File f=new File("C:/config.xml");
-			FileReader fin=new FileReader(f);
+			FileInputStream fin=new FileInputStream(f);
 			
 			StringBuilder sber=new StringBuilder();
 			org.dom4j.Document doc=null;
-		    while(fin.ready()){
-		    	fin.read(c);
-		    	sber.append(c);
-		    }
 			
+			byte[] c=new byte[1024];
+			int k=fin.read(c);
+		    while(-1!=k){
+		    	k=fin.read(c);
+		    	sber.append(new String(c,"UTF-8"));
+		    }
 			
 			fin.close();
 			doc=DocumentHelper.parseText(sber.toString().trim());
@@ -82,6 +100,11 @@ public class Weber {
 			
 			uname=data.elementText("name");
 			upass=data.elementText("password");
+			
+			if(null==companyName||"".equals(companyName)){
+				companyName=data.elementText("companyName");
+			}
+			
 			person=data.elementText("person");
 			phone=data.elementText("phone");
 			
@@ -102,19 +125,78 @@ public class Weber {
 	 * 根据用户名和密码登陆到crm库
 	 */
 	public void login(){
-		//MultiThreadedHttpConnectionManager connectionManager =  new MultiThreadedHttpConnectionManager();
 		SchemeRegistry schemeRegistry = new SchemeRegistry();
 		schemeRegistry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
 		schemeRegistry.register(new Scheme("https", 443, SSLSocketFactory.getSocketFactory()));
 		PoolingClientConnectionManager cm = new PoolingClientConnectionManager(schemeRegistry);
 		// Increase max total connection to 200
-		cm.setMaxTotal(160);
+		cm.setMaxTotal(200);
 		// Increase default max connection per route to 20
-		cm.setDefaultMaxPerRoute(45);
+		cm.setDefaultMaxPerRoute(20);
 		// Increase max connections for localhost:80 to 50
-		HttpHost localhost = new HttpHost("https://crm.alibaba-inc.com", 80);
-		cm.setMaxPerRoute(new HttpRoute(localhost), 50);
+		HttpHost albb = new HttpHost("https://crm.alibaba-inc.com", 80);
+		cm.setMaxPerRoute(new HttpRoute(albb), 50);
 		httpclient=new DefaultHttpClient(cm);
+		
+		
+		HttpParams params = httpclient.getParams();
+
+	    HttpConnectionParams.setSoTimeout(params, 500);//设定连接等待时间
+
+	    HttpConnectionParams.setConnectionTimeout(params, 600);//设定超时时间
+		
+		CookieSpecFactory csf = new CookieSpecFactory() {
+		public CookieSpec newInstance(HttpParams params) {
+		    return new BrowserCompatSpec() {   
+			              @Override
+			              public void validate(Cookie cookie, CookieOrigin origin)
+			              throws MalformedCookieException {
+			                  // Oh, I am easy
+			              }
+			          };
+			     }
+			};
+		
+		
+			httpclient.getCookieSpecs().register("easy", csf);
+			 httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, "easy");
+		
+		HttpRequestRetryHandler myRetryHandler = new HttpRequestRetryHandler() {
+
+		    public boolean retryRequest(IOException exception,int executionCount,HttpContext context) {
+		        if (executionCount >= 5) {
+		            // Do not retry if over max retry count
+		            return false;
+		        }
+		        if (exception instanceof InterruptedIOException) {
+		            // Timeout
+		            return false;
+		        }
+		        if (exception instanceof UnknownHostException) {
+		            // Unknown host
+		            return false;
+		        }
+		        if (exception instanceof ConnectException) {
+		            // Connection refused
+		            return false;
+		        }
+		        if (exception instanceof SSLException) {
+		            // SSL handshake exception
+		            return false;
+		        }
+		        HttpRequest request = (HttpRequest) context.getAttribute(
+		                ExecutionContext.HTTP_REQUEST);
+		        boolean idempotent = !(request instanceof HttpEntityEnclosingRequest); 
+		        if (idempotent) {
+		            // Retry if the request is considered idempotent 
+		            return true;
+		        }
+		        return false;
+		    }
+
+		};
+
+		httpclient.setHttpRequestRetryHandler(myRetryHandler);
 		
 		/**
 		 * 设置跳转策略
@@ -197,6 +279,7 @@ public class Weber {
 			    
 			    String result=EntityUtils.toString(response.getEntity());
 			
+			    EntityUtils.consume(response.getEntity());
 			    
 			    if(result.contains("my_next_url")){
 			    	
@@ -204,8 +287,7 @@ public class Weber {
 				
 				   String my_next_url=sber.substring(sber.indexOf("my_next_url=\"")+13, sber.indexOf("\";",sber.indexOf("my_next_url=\"")));
 				   
-				   System.out.println(my_next_url);
-				
+				  			
 				   HttpGet mainPage=null;
 				   if(my_next_url.contains("?")){
 					   mainPage=new HttpGet("https://crmchn.cn.alibaba-inc.com"+my_next_url+"&csrfToken=74244700");
@@ -217,13 +299,15 @@ public class Weber {
 			       HttpResponse resp=httpclient.execute(mainPage);
 			       result=EntityUtils.toString(resp.getEntity());
 			    
+			       EntityUtils.consume(resp.getEntity());
+			       
 			       if(result.contains("my_next_url")){
 			    	   System.out.println("跳转成功！");
 			    	   sber.delete(0, sber.length());
 			    	   sber.append(result);
 					
 					   my_next_url=sber.substring(sber.indexOf("my_next_url=\"")+13, sber.indexOf("\";",sber.indexOf("my_next_url=\"")));
-					   System.out.println("第二次自动跳转：");
+					   System.out.println("第二次自动跳转："+my_next_url);
 					
 					
 					   HttpGet mainPage2=null;
@@ -235,6 +319,8 @@ public class Weber {
 					   HttpResponse resp2=httpclient.execute(mainPage2);
 				       result=EntityUtils.toString(resp2.getEntity());
 				    
+				       EntityUtils.consume(resp2.getEntity());
+				       
 				       if(result.contains("id=\"mainFrame\"")){
 				    	   System.out.println("跳转成功！");
 				           String mp=result.substring(result.indexOf("id=\"mainFrame\" src=\"")+20, result.indexOf("\" style", result.indexOf("id=\"mainFrame\" src=\"")));
@@ -264,17 +350,18 @@ public class Weber {
 		System.out.println("开始扫描...");
 		new Thread(new Scaner(1)).start();
 		new Thread(new Scaner(2)).start();
-		new Thread(new Scaner(3)).start();
+		//new Thread(new Scaner(3)).start();
 		
 	}
 	
 	public static void main(String[] args) {
-		if(args.length>0&&null!=args[0]&&!"".equals(args[0])){
-			Weber weber=new Weber(args[0].trim());	
-		}else{
-			System.out.println("请输入扫描公司名称!");
-		}
-        
+		Weber weber=null;
+		 if(null!=args&&args.length>0){
+			 weber=new Weber(args[0]==null?null:args[0].trim()); 
+		 }else{
+			 weber=new Weber(null);
+		 }
+				
 	}
 
 }

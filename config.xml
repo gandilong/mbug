@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <data>
-     <name>shqhzwj11</name>
-     <password>zljiayou2013</password>
-     <companyName>����</companyName>
+     <name>shqhzwj11</name><!--账号-->
+     <password>zljiayou2013</password><!--密码-->
+     <companyName>贸易</companyName><!--需要查询的公司名的关键词-->
     
-     <person>������</person>     
-     <phone>21365425</phone>
+     <person>张三龙</person><!--申请人-->     
+     <phone>21365425</phone><!--电话-->
 
-     <keywords>
-          <keyword>a</keyword>
-          <keyword>b</keyword>
-          <keyword>c</keyword>
+     <keywords><!--包含以下关键词的公司名都不保存,按格式可以加任意数据关键字-->
+          <keyword>科技</keyword>
+          <keyword>金融</keyword>
+          <keyword>软件</keyword>
      </keywords>
 </data>
