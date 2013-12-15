@@ -2,6 +2,8 @@ package com.thang.ui;
 
 import javax.swing.JOptionPane;
 
+import com.thang.App;
+
 
 public class LoginWin extends javax.swing.JFrame {
 	private static final long serialVersionUID = 6063420551306356169L;
@@ -89,10 +91,20 @@ public class LoginWin extends javax.swing.JFrame {
     		JOptionPane.showMessageDialog(LoginWin.this,"ÃÜÂë²»ÄÜÎª¿Õ£¡");
     		return;
     	}
+    	
+    	App.setUname(name);
+    	App.setUpass(pass);
+    	if(App.login()){
+    		this.setVisible(false);
+    		App.showMain();
+    	}else{
+    		JOptionPane.showMessageDialog(LoginWin.this,"µÇÂ½Ê§°Ü£¡");
+    		return;
+    	}
         
     }                                        
 
-   
+    
     // Variables declaration - do not modify                     
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
