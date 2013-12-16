@@ -4,16 +4,10 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -42,7 +36,6 @@ import org.apache.http.cookie.MalformedCookieException;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.impl.cookie.BrowserCompatSpec;
-import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -53,6 +46,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.thang.model.MData;
 import com.thang.ui.LoginWin;
 import com.thang.ui.MainWin;
 
@@ -68,8 +64,9 @@ public class App {
 	private static String LoginURL="https://login.alibaba-inc.com/ssoLogin.htm?APP_NAME=transformers&BACK_URL=https%3A%2F%2Fcrmchn.cn.alibaba-inc.com%2Fuser%2Fturbine%2Ftemplate%2Fuser%2CSignin&CONTEXT_PATH=%2Fuser%2Fturbine&CLIENT_VERSION=0.3.6-forcrm";
 	private static String FormURL="https://crm.alibaba-inc.com";
 	
-	
+	private static Gson gson=null;
 	public static void main(String args[]) {
+		
 	        try {
 	            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
 	                if ("Nimbus".equals(info.getName())) {
@@ -100,6 +97,7 @@ public class App {
 	 
 	 
     public static boolean login(){
+         	gson=new Gson();
 			SchemeRegistry schemeRegistry = new SchemeRegistry();
 			schemeRegistry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
 			schemeRegistry.register(new Scheme("https", 443, SSLSocketFactory.getSocketFactory()));
@@ -124,31 +122,6 @@ public class App {
 		    
 		    
 		    try {
-		    	   TrustManager easyTrustManager = new X509TrustManager() {
-			    	    public void checkClientTrusted(X509Certificate[] chain,
-			    	      String authType) throws CertificateException {
-			    	     // 哦，这很简单！
-			    	    }
-			    	    public void checkServerTrusted(X509Certificate[] chain,
-			    	      String authType) throws CertificateException {
-			    	      //哦，这很简单！
-			    	    }
-			    	    public X509Certificate[] getAcceptedIssuers() {
-			    	     return null;
-			    	    }
-		    	   };
-		    	   SSLContext sslcontext = SSLContext.getInstance("TLS");
-		    	   sslcontext
-		    	     .init(null, new TrustManager[] { easyTrustManager }, null);
-		    	   SSLSocketFactory sf = new SSLSocketFactory(sslcontext);
-		    	   SSLSocket socket = (SSLSocket) sf.createSocket();
-		    	   socket.setEnabledCipherSuites(new String[] { "SSL_RSA_WITH_RC4_128_MD5" });
-		    
-		    
-		    	   Scheme sch = new Scheme("https", 443, sf);
-		    	   sf.connectSocket(socket, "crm.alibaba-inc.com", 443, null, -1, params);
-
-		    	   httpclient.getConnectionManager().getSchemeRegistry().register(sch);
 		    
 		    
 			CookieSpecFactory csf = new CookieSpecFactory() {
@@ -356,71 +329,27 @@ public class App {
 		    return false;
     }
 
-    public static void queryForm(String cname){
+    public static List<MData> queryForm(String cname){
     	try{
-    		
+    		List<MData> ps=null;
     		HttpGet hget=new HttpGet("https://crm.alibaba-inc.com/noah/presale/work/allCustomer.vm");
     		
     		HttpResponse hr=httpclient.execute(hget);
     		
-    	
     		
-    		
-    		
-    		
-    		
-    		/*X509TrustManager xtm = new X509TrustManager(){   //创建TrustManager 
-                public X509Certificate[] getAcceptedIssuers() { return null; }
-				@Override
-				public void checkClientTrusted(X509Certificate[] arg0,
-						String arg1) throws CertificateException {
-					// TODO Auto-generated method stub
-					
-				}
-				@Override
-				public void checkServerTrusted(X509Certificate[] arg0,
-						String arg1) throws CertificateException {
-					// TODO Auto-generated method stub
-					
-				} 
-            }; 
-            try { 
-                //TLS1.0与SSL3.0基本上没有太大的差别，可粗略理解为TLS是SSL的继承者，但它们使用的是相同的SSLContext 
-                SSLContext ctx = SSLContext.getInstance("TLS"); 
-                 
-                //使用TrustManager来初始化该上下文，TrustManager只是被SSL的Socket所使用 
-                ctx.init(null, new TrustManager[]{xtm}, null); 
-                 
-                //创建SSLSocketFactory 
-                SSLSocketFactory socketFactory = new SSLSocketFactory(ctx); 
-                 
-                //通过SchemeRegistry将SSLSocketFactory注册到我们的HttpClient上 
-                httpclient.getConnectionManager().getSchemeRegistry().register(new Scheme("https", 443, socketFactory)); 
-    		
-            }catch(Exception e){
-            	e.printStackTrace();
-            }
-    		
-    		*/
-    		
-    		
-    		
-    		
-    		
-    		
+    		System.out.println("hr="+hr);
     		
     		
     		
     		String result=EntityUtils.toString(hr.getEntity());
     	
-    		String logo="search_as_opportunity_rpc=shy.mixin(shy.createRPC('";
     		String formURL=result.substring(result.indexOf("var search_as_opportunity_rpc"));
     		                                                
     		       formURL=formURL.substring(55, formURL.indexOf(".do'),")+3);
-    		       formURL=formURL.replaceFirst("..do", ".do");
-	    	System.out.println("formURL="+FormURL+formURL);
+    		       //formURL=formURL.replaceFirst("..do", ".do");
     		HttpPost hpost_form=new HttpPost(FormURL+formURL);
-	    	
+    		hpost_form.addHeader("X-Requested-With","XMLHttpRequest");
+    	
     		List<NameValuePair> inputs=new ArrayList<NameValuePair>();
 	    	
 	    	String params="[\"\",{\"$rid\":\"\",\"companyName\":\""+cname+"\",\"via\":\"viaContact\",\"idType\":\"globalId\",\"idText\":\"\",\"searchType\":\"allOr\"},0,100]";
@@ -431,17 +360,33 @@ public class App {
 
 			hpost_form.setEntity(new UrlEncodedFormEntity(inputs,"UTF-8"));
 		
-		
-			
 			HttpResponse resp=httpclient.execute(hpost_form);
 			
-			System.out.println("===="+resp);
 			HttpEntity en=resp.getEntity();
-			System.out.println(en.getContentLength());
-			System.out.println(EntityUtils.toString(en));
+			String queryResult=EntityUtils.toString(en);
+			if(null!=queryResult&&!"".equals(queryResult.trim())){
+				
+				if(queryResult.contains("返回数据超过100")){
+					System.out.println("返回数据超过100条");
+					return null;
+				}
+				
+				if(!queryResult.contains("{\"totalCount\"")){
+					return null;
+				}
+				
+				String rs=queryResult.substring(queryResult.indexOf("\"resultList\":[")+13, queryResult.indexOf(",\"errorMsg\""));
+				if(null!=rs&&rs.trim().length()>0){
+					ps = gson.fromJson(rs, new TypeToken<List<MData>>(){}.getType());
+				}
+				
+			}
+			return ps;
     	}catch(Exception e){
     		e.printStackTrace();
     	}
+    	
+    	return null;
     }
     
     

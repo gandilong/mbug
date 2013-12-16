@@ -1,17 +1,54 @@
 package com.thang.ui;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.HashSet;
+import java.util.List;
+
 import com.thang.App;
+import com.thang.model.MData;
+import com.thang.tools.DateUtils;
 
 public class MainWin  extends javax.swing.JFrame {  
 	
 	
 	private static final long serialVersionUID = 4157836233111696345L;
+	private static StringBuffer sber=null;
+	private static boolean running=false;
+	private static Thread task=null;
+	private static HashSet<String> companys=null;
 	
 	public MainWin() {
+		sber=new StringBuffer();
+		companys=new HashSet<String>();
         initComponents();
+        timeNum.setVisible(false);
         this.setLocationRelativeTo(null);
+        
+        
+        this.addWindowListener(new WindowAdapter() {
+        	
+        	@Override
+        	public void windowClosing(WindowEvent e) {
+        		if(null!=task){
+        			task.stop();
+        		}
+        		super.windowClosing(e);
+        	}
+        	
+		});
     }
 
+	public static void showCompany(String s){
+		if(!companys.contains(s)){
+			companys.add(s);
+			sber.append(s);
+			sber.append("\n");
+			companyText.setText(sber.toString());
+		}
+		
+	}
+	
    @SuppressWarnings("unchecked")
     private void initComponents() {
 
@@ -40,7 +77,7 @@ public class MainWin  extends javax.swing.JFrame {
             }
         });
 
-        jLabel1.setText("…®√Ë∆µ¬ £®¥Œ/√Î£©£∫");
+        jLabel1.setText("");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -83,15 +120,80 @@ public class MainWin  extends javax.swing.JFrame {
         pack();
     }// </editor-fold>                        
 
+   public String[] getKeywords(){
+	   if(null!=keywordText.getText()&&keywordText.getText().trim().length()>0){
+		   return keywordText.getText().split("\n");   
+	   }
+	   return null;
+   }
+   
+ 
     private void beginBtnActionPerformed(java.awt.event.ActionEvent evt) {                                         
-    	App.queryForm("…œ∫£ÃÏ∫Ω");
+    	System.out.println("=running="+running);
+    	if(!running){
+    		beginBtn.setText("Õ£÷π…®√Ë");
+    		running=true;
+    		
+    		if(null==task){
+    			task=new Thread(new MyTask());
+    			task.start();
+    		}
+    		
+    	}else{
+    		beginBtn.setText("∆Ù∂Ø…®√Ë");
+    		running=false;
+    	}
+    	
     }                                     
 // Variables declaration - do not modify                     
 private javax.swing.JButton beginBtn;
-private javax.swing.JTextArea companyText;
+private static javax.swing.JTextArea companyText;
 private javax.swing.JLabel jLabel1;
 private javax.swing.JScrollPane jScrollPane1;
 private javax.swing.JScrollPane jScrollPane2;
 private javax.swing.JTextArea keywordText;
 private javax.swing.JTextField timeNum;
+
+class MyTask implements Runnable{
+
+	
+	
+	@Override
+	public void run() {
+		
+       while(true){
+    	   System.out.println("thread running="+running);
+    	  if(running){
+		    	 
+		    	   String[] keys=getKeywords();
+		    	  for(String key:keys){
+		    		  try{
+		    	    	  Thread.sleep(1000);
+		    	    	}catch(Exception e){
+		    	    		e.printStackTrace();
+		    	    	}
+					List<MData> data=App.queryForm(key);
+			    	
+			    	if(null!=data&&data.size()>0){
+			    		for(MData d:data){
+			    			if(null!=d.getGmtlastOperate()&&d.getGmtlastOperate().trim().length()>0){
+			    				if(DateUtils.isBig(d.getGmtlastOperate())){
+			    					showCompany(d.getCompanyName());
+			    				}
+			    			}else{
+			    			    showCompany(d.getCompanyName());
+			    			}
+			    		}
+			    	}
+		    	   }//for end
+		    	
+    	  }//if end
+    	  
+       }// while end
+	}//run end
+	
+}//mytask end
+
 }
+
+
