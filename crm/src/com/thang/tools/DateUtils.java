@@ -31,6 +31,7 @@ public class DateUtils {
 	
 	public static void main(String[] args) {
 		System.out.println(isBig("2010-01-13 16:46:28.0"));
+		System.out.println(Math.random());
 	}
 	
 	
