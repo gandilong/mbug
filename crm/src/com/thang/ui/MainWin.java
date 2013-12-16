@@ -2,8 +2,18 @@ package com.thang.ui;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
 import com.thang.App;
 import com.thang.model.MData;
@@ -177,11 +187,13 @@ class MyTask implements Runnable{
 			    	if(null!=data&&data.size()>0){
 			    		for(MData d:data){
 			    			if(null!=d.getGmtlastOperate()&&d.getGmtlastOperate().trim().length()>0){
-			    				if(DateUtils.isBig(d.getGmtlastOperate())){
+			    				if(DateUtils.isBig(d.getGmtlastOperate())&&"y".equalsIgnoreCase(d.getCanPick())){
 			    					showCompany(d.getCompanyName());
 			    				}
 			    			}else{
-			    			    showCompany(d.getCompanyName());
+			    				if("y".equalsIgnoreCase(d.getCanPick())){
+			    					showCompany(d.getCompanyName());	
+			    				}
 			    			}
 			    		}
 			    	}
@@ -191,6 +203,86 @@ class MyTask implements Runnable{
     	  
        }// while end
 	}//run end
+	
+	
+	
+	public void pickIt(MData md){
+		DefaultHttpClient client=App.getDefaultHttpClient();
+		
+		try{
+		    HttpGet hget=new HttpGet("https://crm.alibaba-inc.com/noah/opportunity/pickInfo.cxul?globalId="+md.getGlobalId()+"&from=leads");
+		
+		    HttpResponse hr=client.execute(hget);
+		    String html=EntityUtils.toString(hr.getEntity());
+		    EntityUtils.consume(hr.getEntity());
+		    
+		    if(null!=html&&html.trim().length()>0){
+		    	int k=html.indexOf("rpc:shy.mixin(shy.createRPC('");
+		    	String tiaoURL=html.substring(k+29, html.indexOf(".do",k));
+		    	System.out.println("tiaoURL:"+tiaoURL);
+		    	
+		    	String postURL="https://crm.alibaba-inc.com"+tiaoURL;
+		    	HttpPost hpost=new HttpPost(postURL);
+		    	
+		    	List<NameValuePair> inputs=new ArrayList<NameValuePair>();
+		    	
+		    	String params="[{\"errorMessage\":null,\"groupDefault\":null,"
+		    			+ "\"selectCompanyName\":\"上海天航售票中心\",\"sourceDefault\":\"95095\","
+		    			+ "\"vLeadSourceGroup\":[{\"name\":\"内部员工开源\",\"value\":\"70\"},"
+		    			+ "{\"name\":\"培育类（清洗leads/短信/邮件/线上）\",\"value\":\"60\"},"
+		    			+ "{\"name\":\"渠道销售专用\",\"value\":\"90\"},{\"name\":\"外部渠道（工商/政府合作/专业市场）\","
+		    			+ "\"value\":\"50\"}],\"canSelectOppList\":[{\"loginId\":null,\"lastOperationType\":null,"
+		    			+ "\"custRelType\":null,\"statusName\":\"活跃\",\"cityName\":\"上海\",\"lastOperationDesc\":null,\"street\":\"上海\","
+		    			+ "\"phoneAreaCode\":\"021\",\"provinceName\":\"上海\",\"canPick\":null,\"productType\":\"1\","
+		    			+ "\"city\":\"2611\",\"orgId\":\"30\",\"phoneNumber\":\"32033323\",\"phoneExt\":null,"
+		    			+ "\"nickName\":null,\"opportunityType\":null,\"province\":\"2610\",\"custmemo\""
+		    			+ ":null,\"oppMemo\":null,\"originName\":\"新注册及网上申请表单-网上免费会员\",\"ownerName\":null,"
+		    			+ "\"phoneCountryCode\":\"86\",\"status\":\"active\",\"oppGmtCreated\":\"2012-07-09\","
+		    			+ "\"companyName\":\"上海天航售票中心\",\"maturityName\":\"0.暂未定成熟度\",\"country\":null,"
+		    			+ "\"mobileCountryCode\":null,\"email\":null,\"lastOperationDescName\":\"\","
+		    			+ "\"memberId\":\""+md.getMemberId()+"\",\"customerStatus\":null,"
+		    			+ "\"corporateRepresent\":null,\"gmtLastOperate\":\""+md.getGmtlastOperate()+"\","
+		    			+ "\"maturity\":\"999\",\"ownerId\":null,\"oppId\":\""+md.getOpportunityId()+"\","
+		    			+ "\"mobilePhoneNum\":null,\"identity\":null,\"customerId\":null,"
+		    			+ "\"productTypeName\":\"诚信通\",\"district\":\"2612\",\"renewFlag\":\"n\","
+		    			+ "\"site\":null,\"customerType\":null,\"website\":null,\"origin\":\"4\","
+		    			+ "\"globalId\":\""+md.getGlobalId()+"\",\"orgName\":\""+md.getOrgFullNamePath()+"\""
+		    			+ ",\"udbId\":null,\"companyId\":null,\"gmtContact\":null,\"busiRegNumber\":null,"
+		    			+ "\"$rid\":\"_0\",\"$index\":0}],\"specicalSalesDefault\":null,\"from\":\"leads\","
+		    			+ "\"isProtected\":\"N\",\"doConflictCheck\":\"N\",\"sourceDefaultType\":\"90\","
+		    			+ "\"specicalSales\":null,\"nickName\":\"cbu-panpan521\",\"rankDefault\":null,"
+		    			+ "\"isIncall\":null,\"isVasSeaSales\":null,\"group\":null,\"selectMemberId\":\""+md.getMemberId()+"\""
+		    			+ ",\"$rid\":\"\",\"userType\":\"sepcialSales\",\"salesCheckBinding\":\"true\","
+		    			+ "\"groupCheckBinding\":\"false\",\"depotLeadsSource3\":\"96770\",\"salesType\":\"\","
+		    			+ "\"selectedOpp\":[{\"loginId\":null,\"lastOperationType\":null,\"custRelType\":null,"
+		    			+ "\"statusName\":\"活跃\",\"cityName\":\""+md.getCityName()+"\",\"lastOperationDesc\":null,"
+		    			+ "\"street\":\"上海\",\"phoneAreaCode\":\"021\",\"provinceName\":\""+md.getProvinceName()+"\","
+		    			+ "\"canPick\":null,\"productType\":\"1\",\"city\":\""+md.getCity()+"\","
+		    			+ "\"orgId\":\""+md.getOrgId()+"\",\"phoneNumber\":\"32033323\",\"phoneExt\":null,"
+		    			+ "\"nickName\":null,\"opportunityType\":null,\"province\":\""+md.getProvince()+"\","
+		    			+ "\"custmemo\":null,\"oppMemo\":null,\"originName\":\"新注册及网上申请表单-网上免费会员\",\"ownerName\":null,\"phoneCountryCode\":\"86\","
+		    			+ "\"status\":\"active\",\"oppGmtCreated\":\"2013-07-09\",\"companyName\":\""+md.getCompanyName()+"\",\"maturityName\":\"0.暂未定成熟度\",\"country\":null,"
+		    			+ "\"mobileCountryCode\":null,\"email\":null,\"lastOperationDescName\":\"\",\"memberId\":\""+md.getMemberId()+"\",\"customerStatus\":null,"
+		    			+ "\"corporateRepresent\":null,\"gmtLastOperate\":\""+md.getGmtlastOperate()+"\",\"maturity\":\"999\",\"ownerId\":null,"
+		    			+ "\"oppId\":\""+md.getOpportunityId()+"\",\"mobilePhoneNum\":null,\"identity\":null,\"customerId\":null,\"productTypeName\":\"诚信通\","
+		    			+ "\"district\":\"2612\",\"renewFlag\":\"n\",\"site\":null,\"customerType\":null,\"website\":null,\"origin\":\"4\","
+		    			+ "\"globalId\":\""+md.getGlobalId()+"\",\"orgName\":\"/Alibaba/诚信通/销售\",\"udbId\":null,\"companyId\":null,\"gmtContact\":null,"
+		    			+ "\"busiRegNumber\":null,\"$rid\":\"_0\",\"$index\":0}],\"depotLeadsSourceFinal\":\"96770\"}]";
+		    	
+		    	System.out.println(params);
+		    	inputs.add(new BasicNameValuePair("_args_",params));
+				inputs.add(new BasicNameValuePair("_id_","ESHCRQ"));
+				inputs.add(new BasicNameValuePair("t__",String.valueOf(Math.random())));
+
+				hpost.setEntity(new UrlEncodedFormEntity(inputs,"UTF-8"));
+		    	
+		    	HttpResponse resp=client.execute(hpost);
+		    }
+		    
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
 	
 }//mytask end
 

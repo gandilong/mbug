@@ -85,11 +85,11 @@ public class App {
 	        }
 	        java.awt.EventQueue.invokeLater(new Runnable() {
 	            public void run() {
-	            	//LoginWin loginWin=new LoginWin();
-	            	//loginWin.setVisible(true);
-	            	if(App.login()){
+	            	LoginWin loginWin=new LoginWin();
+	            	loginWin.setVisible(true);
+	            	/*if(App.login()){
 	            		App.showMain();
-	            	}
+	            	}*/
 	            	
 	            }
 	        });
@@ -412,6 +412,10 @@ public class App {
 
 	public static void setUpass(String upass) {
 		App.upass = upass;
+	}
+	
+	public static DefaultHttpClient getDefaultHttpClient(){
+		return httpclient;
 	}
 	 
 }
