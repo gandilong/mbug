@@ -48,6 +48,7 @@ import org.jsoup.nodes.Element;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.thang.model.HData;
 import com.thang.model.MData;
 import com.thang.ui.LoginWin;
 import com.thang.ui.MainWin;
@@ -329,33 +330,30 @@ public class App {
 		    return false;
     }
 
-    public static List<MData> queryForm(String cname){
+    public static List<HData> queryForm(String cname){
     	try{
-    		List<MData> ps=null;
     		HttpGet hget=new HttpGet("https://crm.alibaba-inc.com/noah/presale/work/allCustomer.vm");
     		
     		HttpResponse hr=httpclient.execute(hget);
     		
-    		
-    		System.out.println("hr="+hr);
-    		
-    		
-    		
     		String result=EntityUtils.toString(hr.getEntity());
-    	
-    		String formURL=result.substring(result.indexOf("var search_as_opportunity_rpc"));
+    	    String s="var search_as_member_rpc=shy.mixin(shy.createRPC('";
+    	    
+    		int k=result.indexOf(s);
     		                                                
-    		       formURL=formURL.substring(55, formURL.indexOf(".do'),")+3);
-    		       //formURL=formURL.replaceFirst("..do", ".do");
+    		    String formURL=result.substring(k+s.length(), result.indexOf(".do'),",k)+3);
+    		       
     		HttpPost hpost_form=new HttpPost(FormURL+formURL);
+    		
     		hpost_form.addHeader("X-Requested-With","XMLHttpRequest");
     	
     		List<NameValuePair> inputs=new ArrayList<NameValuePair>();
 	    	
-	    	String params="[\"\",{\"$rid\":\"\",\"companyName\":\""+cname+"\",\"via\":\"viaContact\",\"idType\":\"globalId\",\"idText\":\"\",\"searchType\":\"allOr\"},0,100]";
-	    	System.out.println(params);
+	    	String params=null;//"[\"\",{\"$rid\":\"\",\"companyName\":\""+cname+"\",\"via\":\"viaContact\",\"idType\":\"globalId\",\"idText\":\"\",\"searchType\":\"allOr\"},0,100]";//挑入
+	    	       //params="[\"\",{\"$rid\":\"\",\"phoneArea\":\"021\",\"companyName\":\""+cname+"\",\"via\":\"viaContact\",\"idType\":\"globalId\",\"idText\":\"\",\"searchType\":\"companyAndAreaCode\"}]";
+	    	       params="[\"\",{\"$rid\":\"\",\"phoneArea\":\"021\",\"companyName\":\""+cname+"\",\"via\":\"viaContact\",\"idType\":\"globalId\",\"idText\":\"\",\"searchType\":\"companyAndAreaCode\"}]";
 	    	inputs.add(new BasicNameValuePair("_args_",params));
-			inputs.add(new BasicNameValuePair("_id_","ESHCRQ"));
+			inputs.add(new BasicNameValuePair("_id_","XXj79Q"));
 			inputs.add(new BasicNameValuePair("t__",String.valueOf(Math.random())));
 
 			hpost_form.setEntity(new UrlEncodedFormEntity(inputs,"UTF-8"));
@@ -365,23 +363,10 @@ public class App {
 			HttpEntity en=resp.getEntity();
 			String queryResult=EntityUtils.toString(en);
 			if(null!=queryResult&&!"".equals(queryResult.trim())){
-				
-				if(queryResult.contains("返回数据超过100")){
-					System.out.println("返回数据超过100条");
-					return null;
-				}
-				
-				if(!queryResult.contains("{\"totalCount\"")){
-					return null;
-				}
-				
-				String rs=queryResult.substring(queryResult.indexOf("\"resultList\":[")+13, queryResult.indexOf(",\"errorMsg\""));
-				if(null!=rs&&rs.trim().length()>0){
-					ps = gson.fromJson(rs, new TypeToken<List<MData>>(){}.getType());
-				}
+				queryResult=queryResult.substring(queryResult.indexOf("{\"list\":")+8, queryResult.indexOf(",\"size\":"));
+				return gson.fromJson(queryResult, new TypeToken<List<HData>>(){}.getType());
 				
 			}
-			return ps;
     	}catch(Exception e){
     		e.printStackTrace();
     	}

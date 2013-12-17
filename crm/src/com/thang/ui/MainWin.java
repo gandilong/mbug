@@ -16,6 +16,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 import com.thang.App;
+import com.thang.model.HData;
 import com.thang.model.MData;
 import com.thang.tools.DateUtils;
 
@@ -24,18 +25,54 @@ public class MainWin  extends javax.swing.JFrame {
 	
 	private static final long serialVersionUID = 4157836233111696345L;
 	private static StringBuffer sber=null;
-	private static boolean running=false;
 	private static Thread task=null;
 	private static HashSet<String> companys=null;
 	
+	private static MyTask myTask=null;
 	public MainWin() {
+		
 		sber=new StringBuffer();
+		sber.append("金属\n");
+		sber.append("贸易\n");
+		sber.append("泵\n");
+		sber.append("液压\n");
+		sber.append("紧固件\n");
+		sber.append("阀\n");
+		sber.append("包装\n");
+		sber.append("薄膜\n");
+		sber.append("印\n");
+		sber.append("胶\n");
+		sber.append("塑\n");
+		sber.append("工业\n");
+		sber.append("纸\n");
+		sber.append("传动\n");
+		sber.append("仪\n");
+		sber.append("精细\n");
+		sber.append("高分子\n");
+		sber.append("自动化\n");
+		sber.append("自动化=流体\n");
+		sber.append("流体\n");
+		sber.append("铝\n");
+		sber.append("机电\n");
+		sber.append("化工\n");
+		sber.append("电器\n");
+		sber.append("办公家具\n");
+		sber.append("电缆\n");
+		sber.append("木制品\n");
+		sber.append("实业\n");
+		sber.append("商贸\n");
+		sber.append("科技\n");
+		sber.append("设备");
+		
+		
 		companys=new HashSet<String>();
+		
         initComponents();
         timeNum.setVisible(false);
         this.setLocationRelativeTo(null);
         
-        
+       
+        myTask=new MyTask();
         this.addWindowListener(new WindowAdapter() {
         	
         	@Override
@@ -46,7 +83,16 @@ public class MainWin  extends javax.swing.JFrame {
         		super.windowClosing(e);
         	}
         	
+        	@Override
+        	public void windowOpened(WindowEvent e) {
+        		super.windowOpened(e);
+        	}
+        	
 		});
+        
+        keywordText.setText(sber.toString());
+        keywordText.setEditable(false);
+        sber.delete(0, sber.length());
     }
 
 	public static void showCompany(String s){
@@ -139,19 +185,16 @@ public class MainWin  extends javax.swing.JFrame {
    
  
     private void beginBtnActionPerformed(java.awt.event.ActionEvent evt) {                                         
-    	System.out.println("=running="+running);
-    	if(!running){
+    	if(!myTask.isToRun()){
     		beginBtn.setText("停止扫描");
-    		running=true;
-    		
+    		myTask.setToRun(true);
     		if(null==task){
-    			task=new Thread(new MyTask());
+    			task=new Thread(myTask);
     			task.start();
     		}
-    		
     	}else{
-    		beginBtn.setText("启动扫描");
-    		running=false;
+    		myTask.setToRun(false);
+    		beginBtn.setText("正在停止扫描...");
     	}
     	
     }                                     
@@ -166,46 +209,58 @@ private javax.swing.JTextField timeNum;
 
 class MyTask implements Runnable{
 
-	
+	public boolean toRun=false;
 	
 	@Override
 	public void run() {
 		
        while(true){
-    	   System.out.println("thread running="+running);
-    	  if(running){
-		    	 
-		    	   String[] keys=getKeywords();
-		    	  for(String key:keys){
-		    		  try{
-		    	    	  Thread.sleep(1000);
-		    	    	}catch(Exception e){
-		    	    		e.printStackTrace();
-		    	    	}
-					List<MData> data=App.queryForm(key);
-			    	
-			    	if(null!=data&&data.size()>0){
-			    		for(MData d:data){
-			    			if(null!=d.getGmtlastOperate()&&d.getGmtlastOperate().trim().length()>0){
-			    				if(DateUtils.isBig(d.getGmtlastOperate())&&"y".equalsIgnoreCase(d.getCanPick())){
-			    					showCompany(d.getCompanyName());
-			    				}
-			    			}else{
-			    				if("y".equalsIgnoreCase(d.getCanPick())){
-			    					showCompany(d.getCompanyName());	
-			    				}
-			    			}
+    	  if(toRun){
+		    	  String[] keys=getKeywords();
+		    	  if(null!=keys&&keys.length>0){
+		    		  for(String key:keys){
+			    		  try{
+			    	    	  Thread.sleep(800);
+			    	    	}catch(Exception e){
+			    	    		e.printStackTrace();
+			    	    	}
+			    		if(!toRun){
+			    			break;
 			    		}
-			    	}
-		    	   }//for end
+						List<HData> data=App.queryForm(key);
+				    	
+				    	if(null!=data&&data.size()>0){
+				    		for(HData d:data){
+				    			if(!DateUtils.isBig(d.getGmtCreate())){
+				    				showCompany(d.getCompanyName());
+				    			}
+				    		}
+				    	}
+			    	   }//for end
+		    	  }
+		    	 
 		    	
-    	  }//if end
+    	  }else{
+    		  beginBtn.setText("启动扫描");
+    	  }
     	  
        }// while end
 	}//run end
 	
+	public boolean isToRun() {
+		return toRun;
+	}
+
+
+
+	public void setToRun(boolean toRun) {
+		this.toRun = toRun;
+	}
 	
-	
+
+
+
+	@Deprecated
 	public void pickIt(MData md){
 		DefaultHttpClient client=App.getDefaultHttpClient();
 		

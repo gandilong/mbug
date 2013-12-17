@@ -15,22 +15,27 @@ public class DateUtils {
 		  nowD=ca.getTime();
 	}
 	
+	/**
+	 * ÊÇ·ñ³¬¹ý15Ìì
+	 * @param date
+	 * @return
+	 */
 	public static boolean isBig(String date){
 		
-		if(date.endsWith(".0")){
+		if(null!=date&&date.trim().length()>0){
 			try{
-			    Date d=sdf.parse(date.substring(0, date.indexOf(".0")));
-			    return d.after(nowD);
+			    Date d=sdf.parse(date);
+			    return d.before(nowD);
 			}catch(Exception e){
 				e.printStackTrace();
 			}
 			
 		}
-		return false;
+		return true;
 	}
 	
 	public static void main(String[] args) {
-		System.out.println(isBig("2010-01-13 16:46:28.0"));
+		System.out.println(isBig("2013-12-01"));
 		System.out.println(Math.random());
 	}
 	
