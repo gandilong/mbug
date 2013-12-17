@@ -126,7 +126,7 @@ public class HData {
 	}
 	@Override
 	public String toString() {
-		return "HData [Login ID=" + loginId + ", 注册时间=" + gmtCreateStr
+		return "[注册时间=" + gmtCreateStr
 				+ ", 公司名称=" + companyName +",省份="+province +", 城市=" + city + ", 申请人="
 				+ name + ", 会员ID=" + memberId + "]";
 	}

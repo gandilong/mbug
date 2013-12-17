@@ -232,6 +232,7 @@ class MyTask implements Runnable{
 				    	if(null!=data&&data.size()>0){
 				    		for(HData d:data){
 				    			if(!DateUtils.isBig(d.getGmtCreate())){
+				    				System.out.println(d.toString());
 				    				showCompany(d.getCompanyName());
 				    			}
 				    		}
